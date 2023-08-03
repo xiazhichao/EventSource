@@ -17,12 +17,8 @@ enum Event {
         if eventString.hasPrefix(":") {
             return nil
         }
-        let expectedPrefix = "data:"
-        if eventString.hasPrefix(expectedPrefix) {
-            self = Event.parseEvent(eventString, newLineCharacters: newLineCharacters)
-        } else {
-            self = Event.parseEvent(eventString, newLineCharacters: newLineCharacters)
-        }
+
+        self = Event.parseEvent(eventString, newLineCharacters: newLineCharacters)
     }
 
     var id: String? {

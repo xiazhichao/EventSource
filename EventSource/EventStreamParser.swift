@@ -15,7 +15,7 @@ final class EventStreamParser {
     //  \n = LF (Line Feed) → Used as a new line character in Unix/Mac OS X
     //  \r\n = CR + LF → Used as a new line character in Windows
     private let validNewlineCharacters = ["\r\n", "\n", "\r"]
-    private let dataBuffer: NSMutableData
+    private var dataBuffer: NSMutableData
 
     init() {
         dataBuffer = NSMutableData()
@@ -25,17 +25,38 @@ final class EventStreamParser {
         return NSString(data: dataBuffer as Data, encoding: String.Encoding.utf8.rawValue) as String?
     }
 
-    func append(data: Data?) -> [Event] {
+//    func append(data: Data?) -> [Event] {
+//        guard let data = data else { return [] }
+//        dataBuffer.append(data)
+//
+//        let events = extractEventsFromBuffer().compactMap { [weak self] eventString -> Event? in
+//            guard let self = self else { return nil }
+//            return Event(eventString: eventString, newLineCharacters: self.validNewlineCharacters)
+//        }
+//
+//        return events
+//    }
+    
+    func append(data: Data?) -> [Event]? {
         guard let data = data else { return [] }
+        guard let dataString = String(data: data as Data, encoding: .utf8) else {return nil}
+        if let jsonString = String(data: dataBuffer as Data, encoding: .utf8),
+            jsonString.hasPrefix("data:"),
+           dataString.hasPrefix("data:")
+        {
+            dataBuffer = NSMutableData()
+        }
         dataBuffer.append(data)
-
         let events = extractEventsFromBuffer().compactMap { [weak self] eventString -> Event? in
             guard let self = self else { return nil }
+            if eventString == "data:" {
+                return nil
+            }
             return Event(eventString: eventString, newLineCharacters: self.validNewlineCharacters)
         }
-
         return events
     }
+
 
     private func extractEventsFromBuffer() -> [String] {
         var events = [String]()
