@@ -43,24 +43,49 @@ final class EventStreamParser {
         for string in validNewlineCharacters {
             dataString = dataString.replacingOccurrences(of: string, with: "")
         }
-        if dataString == "" {return nil}
-        let newData = NSMutableData()
-        if dataString.hasPrefix("data:{"),dataString.hasSuffix("}"){
-            newData.append(data)
+//        print("开始添加数据: \(dataString)")
+        if dataString.isEmpty {return nil}
+        if dataString.hasPrefix("{"),
+           dataString.hasSuffix("}") {
+            dataString = "data:" + dataString
+            let events = [dataString].compactMap { [weak self] eventString -> Event? in
+                guard let self = self else { return nil }
+//                print("添加完成数据: \(eventString)")
+                return Event(eventString: eventString, newLineCharacters: self.validNewlineCharacters)
+            }
             dataBuffer = NSMutableData()
-        } else if dataString.hasPrefix("{"),dataString.hasSuffix("}") {
-            let dataString = "data:" + dataString
-            newData.append(dataString.data(using: .utf8) ?? data)
-            dataBuffer = NSMutableData()
+            return events
         } else {
-            newData.append(data)
+            if dataString.hasPrefix("data:{"){
+                if dataString.hasSuffix("}") {
+                    dataBuffer = NSMutableData()
+                } else {
+                    dataBuffer.append(data)
+                    dataString = String(data: dataBuffer as Data, encoding: .utf8) ?? ""
+                }
+            } else {
+                if dataString.hasPrefix("{") {
+                    dataString = "data:" + dataString
+                    dataBuffer.append(dataString.data(using: .utf8) ?? data)
+                    dataString = String(data: dataBuffer as Data, encoding: .utf8) ?? ""
+                } else {
+                    dataBuffer.append(data)
+                    dataString = String(data: dataBuffer as Data, encoding: .utf8) ?? ""
+                }
+            }
+            let events = [dataString].compactMap { [weak self] eventString -> Event? in
+                guard let self = self else { return nil }
+//                print("添加完成数据: \(eventString)")
+                if eventString.hasPrefix("data:{"),
+                   dataString.hasSuffix("}"){
+                    dataBuffer = NSMutableData()
+                    return Event(eventString: eventString, newLineCharacters: self.validNewlineCharacters)
+                }else {
+                    return Event(eventString: nil, newLineCharacters: self.validNewlineCharacters)
+                }
+            }
+            return events
         }
-        dataBuffer = newData
-        let events = extractEventsFromBuffer(dataBuffer: newData).compactMap { [weak self] eventString -> Event? in
-            guard let self = self else { return nil }
-            return Event(eventString: eventString, newLineCharacters: self.validNewlineCharacters)
-        }
-        return events
     }
 
 
