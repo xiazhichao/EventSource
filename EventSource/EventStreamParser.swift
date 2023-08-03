@@ -39,30 +39,36 @@ final class EventStreamParser {
     
     func append(data: Data?) -> [Event]? {
         guard let data = data else { return [] }
-        guard let dataString = String(data: data as Data, encoding: .utf8) else {return nil}
-        if let jsonString = String(data: dataBuffer as Data, encoding: .utf8),
-            jsonString.hasPrefix("data:"),
-           dataString.hasPrefix("data:")
-        {
-            dataBuffer = NSMutableData()
+        guard var dataString = String(data: data as Data, encoding: .utf8) else {return nil}
+        for string in validNewlineCharacters {
+            dataString = dataString.replacingOccurrences(of: string, with: "")
         }
-        dataBuffer.append(data)
-        let events = extractEventsFromBuffer().compactMap { [weak self] eventString -> Event? in
+        if dataString == "" {return nil}
+        let newData = NSMutableData()
+        if dataString.hasPrefix("data:{"),dataString.hasSuffix("}"){
+            newData.append(data)
+            dataBuffer = NSMutableData()
+        } else if dataString.hasPrefix("{"),dataString.hasSuffix("}") {
+            let dataString = "data:" + dataString
+            newData.append(dataString.data(using: .utf8) ?? data)
+            dataBuffer = NSMutableData()
+        } else {
+            newData.append(data)
+        }
+        dataBuffer = newData
+        let events = extractEventsFromBuffer(dataBuffer: newData).compactMap { [weak self] eventString -> Event? in
             guard let self = self else { return nil }
-            if eventString == "data:" {
-                return nil
-            }
             return Event(eventString: eventString, newLineCharacters: self.validNewlineCharacters)
         }
         return events
     }
 
 
-    private func extractEventsFromBuffer() -> [String] {
+    private func extractEventsFromBuffer(dataBuffer: NSMutableData) -> [String] {
         var events = [String]()
 
         var searchRange =  NSRange(location: 0, length: dataBuffer.length)
-        while let foundRange = searchFirstEventDelimiter(in: searchRange) {
+        while let foundRange = searchFirstEventDelimiter(in: searchRange,dataBuffer: dataBuffer) {
             // if we found a delimiter range that means that from the beggining of the buffer
             // until the beggining of the range where the delimiter was found we have an event.
             // The beggining of the event is: searchRange.location
@@ -90,7 +96,7 @@ final class EventStreamParser {
     // This methods returns the range of the first delimiter found in the buffer. For example:
     // If in the buffer we have: `id: event-id-1\ndata:event-data-first\n\n`
     // This method will return the range for the `\n\n`.
-    private func searchFirstEventDelimiter(in range: NSRange) -> NSRange? {
+    private func searchFirstEventDelimiter(in range: NSRange,dataBuffer: NSMutableData) -> NSRange? {
         let delimiters = validNewlineCharacters.map { "\($0)\($0)".data(using: String.Encoding.utf8)! }
 
         for delimiter in delimiters {

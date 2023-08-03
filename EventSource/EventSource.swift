@@ -146,13 +146,14 @@ open class EventSource: NSObject, EventSourceProtocol, URLSessionDataDelegate {
 	}
 
     open func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+        mainQueue.async {
+            if self.readyState != .open {
+                return
+            }
 
-		if readyState != .open {
-            return
-        }
-
-        if let events = eventStreamParser?.append(data: data) {
-            notifyReceivedEvents(events)
+            if let events = self.eventStreamParser?.append(data: data) {
+                self.notifyReceivedEvents(events)
+            }
         }
     }
 
