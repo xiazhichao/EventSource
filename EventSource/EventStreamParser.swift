@@ -58,8 +58,7 @@ final class EventStreamParser {
                 if dataString.hasSuffix("}") {
                     receiveJson = ""
                 } else {
-                    receiveJson.append(dataString)
-                    dataString = receiveJson
+                    receiveJson = dataString
                 }
             } else if dataString == "data:" {
                 receiveJson = ""
