@@ -145,17 +145,40 @@ open class EventSource: NSObject, EventSourceProtocol, URLSessionDataDelegate {
 		return Array(eventListeners.keys)
 	}
 
+//    open func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+//
+//            if self.readyState != .open {
+//                return
+//            }
+//
+//            if let events = self.eventStreamParser?.append(data: data) {
+//                self.notifyReceivedEvents(events)
+//            }
+//
+//    }
+    
     open func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-        mainQueue.async {
-            if self.readyState != .open {
-                return
-            }
-
-            if let events = self.eventStreamParser?.append(data: data) {
-                self.notifyReceivedEvents(events)
+        if self.readyState != .open {
+            return
+        }
+        if let dataString = String(data: data as Data, encoding: .utf8) {
+            print("接受数据\(dataString)")
+            let array = dataString.components(separatedBy: "data:")
+            if array.count > 0 {
+                for string in array {
+                    if let events = self.eventStreamParser?.append(dataString: string) {
+                        self.notifyReceivedEvents(events)
+                    }
+                }
+            } else {
+                if let events = self.eventStreamParser?.append(dataString: dataString) {
+                    self.notifyReceivedEvents(events)
+                }
             }
         }
+        
     }
+
 
     open func urlSession(_ session: URLSession,
                          dataTask: URLSessionDataTask,

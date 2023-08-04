@@ -16,7 +16,7 @@ final class EventStreamParser {
     //  \r\n = CR + LF → Used as a new line character in Windows
     private let validNewlineCharacters = ["\r\n", "\n", "\r"]
     private var dataBuffer: NSMutableData
-
+    private var receiveJson = ""
     init() {
         dataBuffer = NSMutableData()
     }
@@ -37,48 +37,52 @@ final class EventStreamParser {
 //        return events
 //    }
     
-    func append(data: Data?) -> [Event]? {
-        guard let data = data else { return [] }
-        guard var dataString = String(data: data as Data, encoding: .utf8) else {return nil}
+    func append(dataString: String?) -> [Event]? {
+        guard var dataString = dataString else {return nil}
         for string in validNewlineCharacters {
             dataString = dataString.replacingOccurrences(of: string, with: "")
         }
-//        print("开始添加数据: \(dataString)")
+        print("开始添加数据: \(dataString)")
         if dataString.isEmpty {return nil}
         if dataString.hasPrefix("{"),
            dataString.hasSuffix("}") {
             dataString = "data:" + dataString
             let events = [dataString].compactMap { [weak self] eventString -> Event? in
                 guard let self = self else { return nil }
-//                print("添加完成数据: \(eventString)")
+                print("添加完成数据1: \(eventString)")
                 return Event(eventString: eventString, newLineCharacters: self.validNewlineCharacters)
             }
-            dataBuffer = NSMutableData()
+            receiveJson = ""
             return events
         } else {
             if dataString.hasPrefix("data:{"){
                 if dataString.hasSuffix("}") {
-                    dataBuffer = NSMutableData()
+                    receiveJson = ""
                 } else {
-                    dataBuffer.append(data)
+                    receiveJson.append(dataString)
                     dataString = String(data: dataBuffer as Data, encoding: .utf8) ?? ""
                 }
+            } else if dataString == "data:" {
+                receiveJson = ""
+                let events = [dataString].compactMap { [weak self] eventString -> Event? in
+                    guard let self = self else { return nil }
+                    return Event(eventString: nil, newLineCharacters: self.validNewlineCharacters)
+                }
+                return events
             } else {
                 if dataString.hasPrefix("{") {
                     dataString = "data:" + dataString
-                    dataBuffer.append(dataString.data(using: .utf8) ?? data)
-                    dataString = String(data: dataBuffer as Data, encoding: .utf8) ?? ""
                 } else {
-                    dataBuffer.append(data)
-                    dataString = String(data: dataBuffer as Data, encoding: .utf8) ?? ""
+                    receiveJson.append(dataString)
+                    dataString = receiveJson
                 }
             }
             let events = [dataString].compactMap { [weak self] eventString -> Event? in
                 guard let self = self else { return nil }
-//                print("添加完成数据: \(eventString)")
+                print("添加完成数据2: \(eventString)")
                 if eventString.hasPrefix("data:{"),
                    dataString.hasSuffix("}"){
-                    dataBuffer = NSMutableData()
+                    receiveJson = ""
                     return Event(eventString: eventString, newLineCharacters: self.validNewlineCharacters)
                 }else {
                     return Event(eventString: nil, newLineCharacters: self.validNewlineCharacters)
