@@ -89,11 +89,11 @@ final class EventStreamParser {
     }
 
 
-    private func extractEventsFromBuffer(dataBuffer: NSMutableData) -> [String] {
+    private func extractEventsFromBuffer() -> [String] {
         var events = [String]()
 
         var searchRange =  NSRange(location: 0, length: dataBuffer.length)
-        while let foundRange = searchFirstEventDelimiter(in: searchRange,dataBuffer: dataBuffer) {
+        while let foundRange = searchFirstEventDelimiter(in: searchRange) {
             // if we found a delimiter range that means that from the beggining of the buffer
             // until the beggining of the range where the delimiter was found we have an event.
             // The beggining of the event is: searchRange.location
@@ -121,7 +121,7 @@ final class EventStreamParser {
     // This methods returns the range of the first delimiter found in the buffer. For example:
     // If in the buffer we have: `id: event-id-1\ndata:event-data-first\n\n`
     // This method will return the range for the `\n\n`.
-    private func searchFirstEventDelimiter(in range: NSRange,dataBuffer: NSMutableData) -> NSRange? {
+    private func searchFirstEventDelimiter(in range: NSRange) -> NSRange? {
         let delimiters = validNewlineCharacters.map { "\($0)\($0)".data(using: String.Encoding.utf8)! }
 
         for delimiter in delimiters {
