@@ -88,7 +88,6 @@ final class EventStreamParser {
         }
     }
 
-
     private func extractEventsFromBuffer() -> [String] {
         var events = [String]()
 
