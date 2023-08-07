@@ -43,12 +43,12 @@ final class EventStreamParser {
 //            dataString = dataString.replacingOccurrences(of: string, with: "")
 //        }
         
-//        #if DEBUG
-//        print("开始添加数据: \(dataString)")
-//        #endif
+        #if DEBUG
+        print("开始添加数据: \(dataString)")
+        #endif
         if dataString.isEmpty {return nil}
         if dataString.hasPrefix("{"),
-           dataString.hasSuffix("\n\n") {
+           dataString.hasSuffix("}\n\n") {
             dataString = "data:" + dataString
             let events = [dataString].compactMap { [weak self] eventString -> Event? in
                 guard let self = self else { return nil }
@@ -58,7 +58,7 @@ final class EventStreamParser {
             return events
         } else {
             if dataString.hasPrefix("data:{"){
-                if dataString.hasSuffix("\n\n") {
+                if dataString.hasSuffix("}\n\n") {
                     receiveJson = ""
                 } else {
                     receiveJson = dataString
@@ -79,7 +79,7 @@ final class EventStreamParser {
             let events = [dataString].compactMap { [weak self] eventString -> Event? in
                 guard let self = self else { return nil }
                 if eventString.hasPrefix("data:{"),
-                   dataString.hasSuffix("\n\n"){
+                   dataString.hasSuffix("}\n\n"){
 //                    #if DEBUG
 //                    print("总数据数据: \(receiveJson)")
 //                    #endif
