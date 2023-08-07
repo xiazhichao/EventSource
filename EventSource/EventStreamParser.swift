@@ -43,9 +43,9 @@ final class EventStreamParser {
 //            dataString = dataString.replacingOccurrences(of: string, with: "")
 //        }
         
-        #if DEBUG
-        print("开始添加数据: \(dataString)")
-        #endif
+//        #if DEBUG
+//        print("开始添加数据: \(dataString)")
+//        #endif
         if dataString.isEmpty {return nil}
         if dataString.hasPrefix("{"),
            dataString.hasSuffix("}\n\n") {
