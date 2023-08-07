@@ -71,6 +71,7 @@ final class EventStreamParser {
                     dataString = receiveJson
                 }
             }
+            
             let events = [dataString].compactMap { [weak self] eventString -> Event? in
                 guard let self = self else { return nil }
                 if eventString.hasPrefix("data:{"),
@@ -80,7 +81,7 @@ final class EventStreamParser {
                     return Event(eventString: eventString, newLineCharacters: self.validNewlineCharacters)
                 }else {
                     print("临时数据: \(receiveJson)")
-                    return Event(eventString: nil, newLineCharacters: self.validNewlineCharacters)
+                    return nil
                 }
             }
             return events
