@@ -39,13 +39,16 @@ final class EventStreamParser {
     
     func append(dataString: String?) -> [Event]? {
         guard var dataString = dataString else {return nil}
-        for string in validNewlineCharacters {
-            dataString = dataString.replacingOccurrences(of: string, with: "")
-        }
-        print("开始添加数据: \(dataString)")
+//        for string in validNewlineCharacters {
+//            dataString = dataString.replacingOccurrences(of: string, with: "")
+//        }
+        
+//        #if DEBUG
+//        print("开始添加数据: \(dataString)")
+//        #endif
         if dataString.isEmpty {return nil}
         if dataString.hasPrefix("{"),
-           dataString.hasSuffix("}") {
+           dataString.hasSuffix("\n\n") {
             dataString = "data:" + dataString
             let events = [dataString].compactMap { [weak self] eventString -> Event? in
                 guard let self = self else { return nil }
@@ -55,13 +58,14 @@ final class EventStreamParser {
             return events
         } else {
             if dataString.hasPrefix("data:{"){
-                if dataString.hasSuffix("}") {
+                if dataString.hasSuffix("\n\n") {
                     receiveJson = ""
                 } else {
                     receiveJson = dataString
                 }
             } else if dataString == "data:" {
                 receiveJson = ""
+                return nil
             } else {
                 if dataString.hasPrefix("{") {
                     dataString = "data:" + dataString
@@ -75,12 +79,16 @@ final class EventStreamParser {
             let events = [dataString].compactMap { [weak self] eventString -> Event? in
                 guard let self = self else { return nil }
                 if eventString.hasPrefix("data:{"),
-                   dataString.hasSuffix("}"){
-                    print("总数据数据: \(receiveJson)")
+                   dataString.hasSuffix("\n\n"){
+//                    #if DEBUG
+//                    print("总数据数据: \(receiveJson)")
+//                    #endif
                     receiveJson = ""
                     return Event(eventString: eventString, newLineCharacters: self.validNewlineCharacters)
                 }else {
-                    print("临时数据: \(receiveJson)")
+//                    #if DEBUG
+//                    print("临时数据: \(receiveJson)")
+//                    #endif
                     return nil
                 }
             }

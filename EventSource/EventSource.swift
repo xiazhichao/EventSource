@@ -162,7 +162,7 @@ open class EventSource: NSObject, EventSourceProtocol, URLSessionDataDelegate {
             return
         }
         if let dataString = String(data: data as Data, encoding: .utf8) {
-            print("接受数据\(dataString)")
+            guard dataString != "data:" else {return}
             let array = dataString.components(separatedBy: "data:")
             if array.count > 0 {
                 for string in array {
